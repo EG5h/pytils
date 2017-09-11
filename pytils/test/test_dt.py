@@ -1,18 +1,4 @@
 # -*- coding: utf-8 -*-
-# pytils - russian-specific string utils
-# Copyright (C) 2006-2009  Yury Yurevich
-#
-# http://pyobject.ru/projects/pytils/
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation, version 2
-# of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
 """
 Unit-tests for pytils.dt
 """
@@ -41,11 +27,18 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         self.dtime['10sec_ago'] = _time - 10
         self.dtime['1min_ago'] = _time - 60
         self.dtime['10min_ago'] = _time - 600
-        self.dtime['1hr_ago'] = _time - 3720
+        self.dtime['59min_ago'] = _time - 3540
+        self.dtime['59min59sec_ago'] = _time - 3599
+        self.dtime['1hr_ago'] = _time - 3600
+        self.dtime['1hr1sec_ago'] = _time - 3601
+        self.dtime['1hr59sec_ago'] = _time - 3659
+        self.dtime['1hr1min_ago'] = _time - 3660
+        self.dtime['1hr2min_ago'] = _time - 3720
         self.dtime['10hr_ago'] = _time - 36600
         self.dtime['1day_ago'] = _time - 87600
         self.dtime['1day1hr_ago'] = _time - 90600
         self.dtime['2day_ago'] = _time - 87600*2
+        self.dtime['4day1min_ago'] = _time - 87600*4 - 60
 
         self.dtime['in_10sec'] = _time + 10
         self.dtime['in_1min'] = _time + 61
@@ -66,6 +59,21 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         # ---
         t1 = self.dtime[typ]
         res = pytils.dt.distance_of_time_in_words(from_time=t1, to_time=t0)
+        # --- revert state to original value
+        self.updateTime(self.time)
+        # ---
+        self.assertEquals(res, estimated)
+
+    def ckDefaultTimeAndAccuracy(self, typ, estimated):
+        """
+        Checks with default accuracy and default time
+        """
+        t0 = time.time()
+        # --- change state !!! attention
+        self.updateTime(t0)
+        # ---
+        t1 = self.dtime[typ]
+        res = pytils.dt.distance_of_time_in_words(t1)
         # --- revert state to original value
         self.updateTime(self.time)
         # ---
@@ -93,7 +101,13 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         self.ckDefaultAccuracy("10sec_ago", u"менее минуты назад")
         self.ckDefaultAccuracy("1min_ago", u"1 минуту назад")
         self.ckDefaultAccuracy("10min_ago", u"10 минут назад")
+        self.ckDefaultAccuracy("59min_ago", u"59 минут назад")
+        self.ckDefaultAccuracy("59min59sec_ago", u"59 минут назад")
         self.ckDefaultAccuracy("1hr_ago", u"1 час назад")
+        self.ckDefaultAccuracy("1hr1sec_ago", u"1 час назад")
+        self.ckDefaultAccuracy("1hr59sec_ago", u"1 час назад")
+        self.ckDefaultAccuracy("1hr1min_ago", u"1 час назад")
+        self.ckDefaultAccuracy("1hr2min_ago", u"1 час назад")
         self.ckDefaultAccuracy("10hr_ago", u"10 часов назад")
         self.ckDefaultAccuracy("1day_ago", u"1 день назад")
         self.ckDefaultAccuracy("1day1hr_ago", u"1 день назад")
@@ -108,6 +122,45 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         self.ckDefaultAccuracy("in_1day1hr", u"через 1 день")
         self.ckDefaultAccuracy("in_2day", u"через 2 дня")
 
+    def testDOTIWDefaultAccuracyDayAndMinute(self):
+        """
+        Unit-tests for distance_of_time_in_words with default accuracy and to_time
+        """
+        self.ckDefaultTimeAndAccuracy("4day1min_ago", u"4 дня назад")
+
+        self.ckDefaultTimeAndAccuracy("10sec_ago", u"менее минуты назад")
+        self.ckDefaultTimeAndAccuracy("1min_ago", u"минуту назад")
+        self.ckDefaultTimeAndAccuracy("10min_ago", u"10 минут назад")
+        self.ckDefaultTimeAndAccuracy("59min_ago", u"59 минут назад")
+        self.ckDefaultTimeAndAccuracy("59min59sec_ago", u"59 минут назад")
+        self.ckDefaultTimeAndAccuracy("1hr_ago", u"час назад")
+        self.ckDefaultTimeAndAccuracy("1hr1sec_ago", u"час назад")
+        self.ckDefaultTimeAndAccuracy("1hr59sec_ago", u"час назад")
+        self.ckDefaultTimeAndAccuracy("1hr1min_ago", u"час назад")
+        self.ckDefaultTimeAndAccuracy("1hr2min_ago", u"час назад")
+        self.ckDefaultTimeAndAccuracy("10hr_ago", u"10 часов назад")
+        self.ckDefaultTimeAndAccuracy("1day_ago", u"вчера")
+        self.ckDefaultTimeAndAccuracy("1day1hr_ago", u"вчера")
+        self.ckDefaultTimeAndAccuracy("2day_ago", u"позавчера")
+
+        self.ckDefaultTimeAndAccuracy("in_10sec", u"менее чем через минуту")
+        self.ckDefaultTimeAndAccuracy("in_1min", u"через минуту")
+        self.ckDefaultTimeAndAccuracy("in_10min", u"через 10 минут")
+        self.ckDefaultTimeAndAccuracy("in_1hr", u"через час")
+        self.ckDefaultTimeAndAccuracy("in_10hr", u"через 10 часов")
+        self.ckDefaultTimeAndAccuracy("in_1day", u"завтра")
+        self.ckDefaultTimeAndAccuracy("in_1day1hr", u"завтра")
+        self.ckDefaultTimeAndAccuracy("in_2day", u"послезавтра")
+
+    def test4Days1MinuteDaytimeBug2(self):
+        from_time = datetime.datetime.now() - \
+            datetime.timedelta(days=4, minutes=1)
+        res = pytils.dt.distance_of_time_in_words(from_time)
+        self.assertEquals(
+            res,
+            u"4 дня назад")
+
+
     def testDOTIWDefaultToTimeAcc1(self):
         """
         Unit-tests for distance_of_time_in_words with default to_time and accuracy=1
@@ -116,7 +169,13 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         self.ckDefaultToTime("10sec_ago", 1, u"менее минуты назад")
         self.ckDefaultToTime("1min_ago", 1, u"минуту назад")
         self.ckDefaultToTime("10min_ago", 1,  u"10 минут назад")
+        self.ckDefaultToTime("59min_ago", 1, u"59 минут назад")
+        self.ckDefaultToTime("59min59sec_ago", 1, u"59 минут назад")
         self.ckDefaultToTime("1hr_ago", 1, u"час назад")
+        self.ckDefaultToTime("1hr1sec_ago", 1, u"час назад")
+        self.ckDefaultToTime("1hr59sec_ago", 1, u"час назад")
+        self.ckDefaultToTime("1hr1min_ago", 1, u"час назад")
+        self.ckDefaultToTime("1hr2min_ago", 1, u"час назад")
         self.ckDefaultToTime("10hr_ago", 1, u"10 часов назад")
         self.ckDefaultToTime("1day_ago", 1, u"вчера")
         self.ckDefaultToTime("1day1hr_ago", 1, u"вчера")
@@ -139,7 +198,13 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         self.ckDefaultToTime("10sec_ago", 2, u"менее минуты назад")
         self.ckDefaultToTime("1min_ago", 2, u"минуту назад")
         self.ckDefaultToTime("10min_ago", 2,  u"10 минут назад")
-        self.ckDefaultToTime("1hr_ago", 2, u"1 час 2 минуты назад")
+        self.ckDefaultToTime("59min_ago", 2, u"59 минут назад")
+        self.ckDefaultToTime("59min59sec_ago", 2, u"59 минут назад")
+        self.ckDefaultToTime("1hr_ago", 2, u"час назад")
+        self.ckDefaultToTime("1hr1sec_ago", 2, u"час назад")
+        self.ckDefaultToTime("1hr59sec_ago", 2, u"час назад")
+        self.ckDefaultToTime("1hr1min_ago", 2, u"1 час 1 минуту назад")
+        self.ckDefaultToTime("1hr2min_ago", 2, u"1 час 2 минуты назад")
         self.ckDefaultToTime("10hr_ago", 2, u"10 часов 10 минут назад")
         self.ckDefaultToTime("1day_ago", 2, u"вчера")
         self.ckDefaultToTime("1day1hr_ago", 2, u"1 день 1 час назад")
@@ -162,7 +227,13 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         self.ckDefaultToTime("10sec_ago", 3, u"менее минуты назад")
         self.ckDefaultToTime("1min_ago", 3, u"минуту назад")
         self.ckDefaultToTime("10min_ago", 3,  u"10 минут назад")
-        self.ckDefaultToTime("1hr_ago", 3, u"1 час 2 минуты назад")
+        self.ckDefaultToTime("59min_ago", 3, u"59 минут назад")
+        self.ckDefaultToTime("59min59sec_ago", 3, u"59 минут назад")
+        self.ckDefaultToTime("1hr_ago", 3, u"час назад")
+        self.ckDefaultToTime("1hr1sec_ago", 3, u"час назад")
+        self.ckDefaultToTime("1hr59sec_ago", 3, u"час назад")
+        self.ckDefaultToTime("1hr1min_ago", 3, u"1 час 1 минуту назад")
+        self.ckDefaultToTime("1hr2min_ago", 3, u"1 час 2 минуты назад")
         self.ckDefaultToTime("10hr_ago", 3, u"10 часов 10 минут назад")
         self.ckDefaultToTime("1day_ago", 3,
                                 u"1 день 0 часов 20 минут назад")
@@ -199,12 +270,6 @@ class DistanceOfTimeInWordsTestCase(unittest.TestCase):
         """
         Unit-tests for testings distance_of_time_in_words' exceptions
         """
-        self.assertRaises(TypeError, pytils.dt.distance_of_time_in_words, "test")
-        self.assertRaises(TypeError, pytils.dt.distance_of_time_in_words, time.time(), "test")
-        self.assertRaises(TypeError, pytils.dt.distance_of_time_in_words, time.time(), 2, "test")
-        self.assertRaises(pytils.err.InputParameterError, pytils.dt.distance_of_time_in_words, "test")
-        self.assertRaises(pytils.err.InputParameterError, pytils.dt.distance_of_time_in_words, time.time(), "test")
-        self.assertRaises(pytils.err.InputParameterError, pytils.dt.distance_of_time_in_words, time.time(), 2, "test")
         self.assertRaises(ValueError, pytils.dt.distance_of_time_in_words, time.time(), 0)
     
     def testIssue25DaysFixed(self):
@@ -301,14 +366,6 @@ class RuStrftimeTestCase(unittest.TestCase):
         self.ck(u"%d.%m.%Y", u"01.04.2007", datetime.date(2007, 4, 1))
         self.ckInflected(u"%d %B %Y", u"1 апреля 2007", datetime.date(2007, 4, 1))
 
-    def testRuStrftimeExceptions(self):
-        """
-        Unit-tests for testing pytils.dt.ru_strftime's exceptions
-        """
-        self.assertRaises(TypeError, pytils.dt.ru_strftime, time.time())
-        self.assertRaises(TypeError, pytils.dt.ru_strftime, u"%Y.%m.%d%", time.time())
-        self.assertRaises(pytils.err.InputParameterError, pytils.dt.ru_strftime, time.time())
-        self.assertRaises(pytils.err.InputParameterError, pytils.dt.ru_strftime, u"%Y.%m.%d%", time.time())
 
     def testIssue20Fixed(self):
         """

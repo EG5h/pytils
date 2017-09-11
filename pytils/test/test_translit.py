@@ -1,25 +1,11 @@
 # -*- coding: utf-8 -*-
-# pytils - russian-specific string utils
-# Copyright (C) 2006-2009  Yury Yurevich
-#
-# http://pyobject.ru/projects/pytils/
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation, version 2
-# of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
 """
 Unit-tests for pytils.translit
 """
 
 import unittest
-
 import pytils
+from pytils.third import six
 
 class TranslitTestCase(unittest.TestCase):
     """
@@ -58,8 +44,6 @@ class TranslitTestCase(unittest.TestCase):
         """
         Unit-test for testing translify's exceptions
         """
-        self.assertRaises(TypeError, pytils.translit.translify, 25)
-        self.assertRaises(pytils.err.InputParameterError, pytils.translit.translify, 25)
         self.assertRaises(ValueError, pytils.translit.translify, u'\u00bfHabla espa\u00f1ol?')
 
     def testDetransliteration(self):
@@ -76,9 +60,9 @@ class TranslitTestCase(unittest.TestCase):
         """
         Unit-test for testing detranslify's exceptions
         """
-        self.assertRaises(TypeError, pytils.translit.detranslify, 25)
-        self.assertRaises(pytils.err.InputParameterError, pytils.translit.detranslify, 25)
-        self.assertRaises(ValueError, pytils.translit.detranslify, "тест")
+        # for Python 2.x non-unicode detranslify should raise exception
+        if six.PY2:
+            self.assertRaises(ValueError, pytils.translit.detranslify, "тест")
 
     def testSlug(self):
         """
@@ -93,9 +77,9 @@ class TranslitTestCase(unittest.TestCase):
         """
         Unit-test for testing slugify's exceptions
         """
-        self.assertRaises(TypeError, pytils.translit.slugify, 25)
-        self.assertRaises(pytils.err.InputParameterError, pytils.translit.slugify, 25)
-        self.assertRaises(ValueError, pytils.translit.slugify, "тест")
+        # for Python 2.x non-unicode slugify should raise exception
+        if six.PY2:
+            self.assertRaises(ValueError, pytils.translit.slugify, "тест")
 
     def testTranslifyAdditionalUnicodeSymbols(self):
         """

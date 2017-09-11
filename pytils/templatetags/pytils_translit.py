@@ -1,75 +1,54 @@
 # -*- coding: utf-8 -*-
 # -*- test-case-name: pytils.test.templatetags.test_translit -*-
-# pytils - russian-specific string utils
-# Copyright (C) 2006-2009  Yury Yurevich
-#
-# http://pyobject.ru/projects/pytils/
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation, version 2
-# of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
 """
 pytils.translit templatetags for Django web-framework
 """
 
 from django import template, conf
 from pytils import translit
-from pytils.templatetags import pseudo_str, pseudo_unicode, init_defaults
+from pytils.templatetags import init_defaults
+
+try:
+    # Django 1.4+
+    from django.utils.encoding import smart_text
+except ImportError:
+    from django.utils.encoding import smart_unicode
+    smart_text = smart_unicode
 
 register = template.Library()  #: Django template tag/filter registrator
-encoding = conf.settings.DEFAULT_CHARSET  #: Current charset (sets in Django project's settings)
 debug = conf.settings.DEBUG  #: Debug mode (sets in Django project's settings)
+encoding = conf.settings.DEFAULT_CHARSET  #: Current charset (sets in Django project's settings)
 show_value = getattr(conf.settings, 'PYTILS_SHOW_VALUES_ON_ERROR', False)  #: Show values on errors (sets in Django project's settings)
 
 default_value, default_uvalue = init_defaults(debug, show_value)
 
 # -- filters --
 
-def translify(stext):
+def translify(text):
     """Translify russian text"""
     try:
-        utext = pseudo_unicode(
-                        stext,
-                        encoding,
-                        default_value)
-        res = translit.translify(utext)
-    except Exception, err:
+        res = translit.translify(smart_text(text, encoding))
+    except Exception as err:
         # because filter must die silently
-        res = default_value % {'error': err, 'value': stext}
+        res = default_value % {'error': err, 'value': text}
     return res
 
-def detranslify(stext):
+def detranslify(text):
     """Detranslify russian text"""
     try:
-        ures = translit.detranslify(stext)
-        res = pseudo_str(
-                ures,
-                encoding,
-                default_uvalue)
-    except Exception, err:
+        res = translit.detranslify(text)
+    except Exception as err:
         # because filter must die silently
-        res = default_value % {'error': err, 'value': stext}
+        res = default_value % {'error': err, 'value': text}
     return res
 
-def slugify(stext):
+def slugify(text):
     """Make slug from (russian) text"""
     try:
-        utext = pseudo_unicode(
-                stext,
-                encoding,
-                default_value)
-        res = translit.slugify(utext)
-    except Exception, err:
-        print err
+        res = translit.slugify(smart_text(text, encoding))
+    except Exception as err:
         # because filter must die silently
-        res = default_value % {'error': err, 'value': stext}
-        print "so res = %r" % res
+        res = default_value % {'error': err, 'value': text}
     return res
 
 # -- register filters
